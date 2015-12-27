@@ -9,6 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../bower_components/paper-progress/paper-progress.html">
 
 <dom-module id="my-super-audio">
     <template>
@@ -75,6 +76,22 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 bottom: 0;
                 left: 0;
             }
+
+            paper-progress {
+                position: relative;
+                width: 100%;
+                --paper-progress-active-color: #e91e63;
+                --paper-progress-transition-duration: 0.08s;
+                --paper-progress-transition-timing-function: ease;
+                --paper-progress-transition-transition-delay: 0s;
+            }
+
+            #duration {
+                text-align: center;
+                line-height: 50px;
+                font-size: 11px;
+                color: blueviolet;
+            }
         </style>
 
         <div id="wrapper" class="layout_horizontal" on-click="playPause">
@@ -85,8 +102,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 </div>
 
                 <audio src="{{src}}" id="audio"></audio>
+
+                <paper-progress id="progress"></paper-progress>
             </div>
-            <div id="right" class="self_end"></div>
+            <div id="right" class="self_end">
+                <div id="duration" class="fit">
+                    <span class="fit">{{duration}}</span>
+                </div>
+            </div>
         </div>
     </template>
     <script>
@@ -99,7 +122,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 properties: {
                     author : String,
                     title : String,
-                    src : String
+                    src : String,
+                    isPlaying : {
+                        type : Boolean,
+                        value : false
+                    },
+                    duration : {
+                        type: Number,
+                        value : 0
+                    }
                 },
 
                 playPause : function(e){
@@ -112,6 +143,35 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     }else{
                         player.$.audio.pause();
                     }
+                },
+
+                listeners : {
+                    'audio.loadedmetadata' : '_onCanPlay',
+                    'audio.playing' : '_startProgressTimer'
+                },
+
+                _onCanPlay : function(){
+                    var player = this;
+                    player.$.progress.max = player.$.audio.duration * 1000;
+                },
+
+                _startProgressTimer : function(){
+                    var player = this;
+                    player.timer = {};
+
+                    if(player.timer.sliderUpdateInterval){
+                        clearInterval(player.timer.slideUpdateInterval);
+                    }
+
+                    player.timer.slideUpdateInterval = setInterval(function(){
+                        if(player.$.audio.paused){
+                            clearInterval(player.timer.slideUpdateInterval);
+                        }else{
+                            player.$.progress.value = player.$.audio.currentTime * 1000;
+                            player.currentTime = player.$.audio.currentTime;
+                        }
+                    }, 120);
+
                 }
             });
         })();
